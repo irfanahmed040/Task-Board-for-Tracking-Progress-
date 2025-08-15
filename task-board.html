@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Task Board</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      background: #3b82f6;
+      color: #fff;
+      margin: 0;
+      padding: 20px 0 10px 0;
+      font-size: 2.3em;
+      letter-spacing: 1px;
+    }
+    form {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 24px 0;
+    }
+    input[type="text"] {
+      font-size: 1em;
+      padding: 0.8em;
+      border-radius: 8px;
+      border: 1px solid #e0e7ef;
+      outline: none;
+      width: 320px;
+      box-sizing: border-box;
+    }
+    button {
+      font-size: 1em;
+      padding: 0.8em 2em;
+      border-radius: 8px;
+      background: #60a5fa;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #2563eb; }
+
+    .board {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      padding: 14px 0 26px 0;
+      min-height: 60vh;
+      box-sizing: border-box;
+    }
+    .column {
+      background: white;
+      border-radius: 14px;
+      width: 300px;
+      min-height: 420px;
+      box-shadow: 0 8px 20px rgba(60,80,130,0.08);
+      padding: 18px 18px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s;
+    }
+    .column h2 {
+      margin: 0 0 14px 0;
+      text-align: center;
+      font-size: 1.3em;
+      color: #374151;
+      letter-spacing: 0.02em;
+      font-weight: 700;
+      background: #eff6ff;
+      padding: 8px 0;
+      border-radius: 10px;
+    }
+    .task {
+      background: #fbfbff;
+      margin: 0 0 12px 0;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border-left: 5px solid #ccc;
+      font-size: 1em;
+      color: #374151;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+      transition: transform 0.2s, box-shadow 0.2s, border-left-color 0.3s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task.todo { border-left-color: #3b82f6; }
+    .task.progress { border-left-color: #fbbf24; }
+    .task.done {
+      border-left-color: #22c55e;
+      background: #d1faf5;
+      text-decoration: line-through;
+      color: #57606f;
+      opacity: 0.8;
+    }
+    .task:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 8px 24px rgba(60,80,130,0.17);
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-left: 10px;
+    }
+    .controls button {
+      background: #e0e7ef;
+      color: #374151;
+      border-radius: 6px;
+      border: none;
+      font-size: 1.1em;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 2px 8px #e0e7efaa;
+      transition: background 0.2s, color 0.2s, transform 0.2s;
+    }
+    .controls button:hover {
+      background: #3b82f6;
+      color: #fff;
+      transform: scale(1.13);
+    }
+    .controls .remove {
+      background: #ef4444;
+      color: white;
+      font-weight: 700;
+    }
+    .controls .remove:hover {
+      background: #dc2626;
+      transform: scale(1.18);
+    }
+    @media (max-width: 900px) {
+      .board { flex-direction: column; align-items: center; }
+      .column { width: 90vw; margin-bottom: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Task Board Demo</h1>
+  <form id="addTaskForm">
+    <input type="text" id="taskInput" placeholder="New task..." required>
+    <button type="submit">Add Task</button>
+  </form>
+  <div class="board">
+    <div class="column" id="todo"><h2>To Do</h2></div>
+    <div class="column" id="progress"><h2>In Progress</h2></div>
+    <div class="column" id="done"><h2>Done</h2></div>
+  </div>
+  <script>
+    let tasks = JSON.parse(localStorage.getItem('demo_tasks')) || {
+      todo: [],
+      progress: [],
+      done: []
+    };
+
+    function saveTasks() {
+      localStorage.setItem('demo_tasks', JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      ['todo','progress','done'].forEach(status=>{
+        const col=document.getElementById(status);
+        col.innerHTML='<h2>'+ (status==='todo'?'To Do':status==='progress'?'In Progress':'Done') +'</h2>';
+        tasks[status].forEach((task, idx)=>{
+          const div=document.createElement('div');
+          div.className='task ' + status;
+          div.textContent=task;
+          const controls=document.createElement('div');
+          controls.className='controls';
+          
+          // Move Left
+          if(status!=='todo'){
+            const btnLeft=document.createElement('button');
+            btnLeft.textContent="←";
+            btnLeft.title="Move Left";
+            btnLeft.onclick=()=>{
+              tasks[status].splice(idx,1);
+              if(status==='progress') tasks['todo'].push(task);
+              else if(status==='done') tasks['progress'].push(task);
+              saveTasks(); renderTasks();
+            };
+            controls.appendChild(btnLeft);
+          }
+          // Move Right
+          if(status!=='done'){
+            const btnRight=document.createElement('button');
+            btnRight.textContent='→';
+            btnRight.title="Move Right";
+            btnRight.onclick=()=>{
+              tasks[status].splice(idx,1);
+              if(status==='todo') tasks['progress'].push(task);
+              else if(status==='progress') tasks['done'].push(task);
+              saveTasks(); renderTasks();
+            };
+            controls.appendChild(btnRight);
+          }
+          // Remove
+          const btnRemove=document.createElement('button');
+          btnRemove.textContent='✗';
+          btnRemove.className='remove';
+          btnRemove.title="Remove Task";
+          btnRemove.onclick=()=>{
+            tasks[status].splice(idx,1);
+            saveTasks(); renderTasks();
+          };
+          controls.appendChild(btnRemove);
+          div.appendChild(controls);
+          col.appendChild(div);
+        });
+      });
+    }
+
+    document.getElementById('addTaskForm').onsubmit=function(e){
+      e.preventDefault();
+      const val = document.getElementById('taskInput').value.trim();
+      if(val){
+        tasks.todo.push(val);
+        saveTasks();
+        renderTasks();
+        this.reset();
+      }
+    };
+
+    renderTasks();
+  </script>
+</body>
+</html>
